@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -16,8 +17,9 @@ namespace CacheClient
 
         private HttpContent Jsonize(object content)
         {
-            
-            return new StringContent(JsonConvert.SerializeObject(content), Encoding.UTF8, "application/json");
+            dynamic post = new JObject();
+            post.value = content;
+            return new StringContent(JsonConvert.SerializeObject(post), Encoding.UTF8, "application/json");
         }
 
         public ServerlessCacheClient(string ServerlessCacheEngineUrl, string ServerlessCacheKey)
@@ -46,13 +48,13 @@ namespace CacheClient
 
         public async Task<bool> ListAddAsync(string key, string value)
         {
-            var resp = await _client.PostAsync(_client.BaseAddress + "list/" + HttpUtility.UrlEncode(key) + "/set", Jsonize(value));
+            var resp = await _client.PostAsync(_client.BaseAddress + "list/" + HttpUtility.UrlEncode(key) + "/add", Jsonize(value));
             return resp.IsSuccessStatusCode;
         }
 
         public async Task<List<string>> ListGetAsync(string key)
         {
-            var resp = await _client.GetAsync(_client.BaseAddress + "list/" + HttpUtility.UrlEncode(key) + "/add");
+            var resp = await _client.GetAsync(_client.BaseAddress + "list/" + HttpUtility.UrlEncode(key) + "/get");
             return JsonConvert.DeserializeObject<List<string>>(await resp.Content.ReadAsStringAsync());
         }
 
@@ -60,6 +62,12 @@ namespace CacheClient
         {
             var resp = await _client.GetAsync(_client.BaseAddress + "list/" + HttpUtility.UrlEncode(key) + "/contains");
             return JsonConvert.DeserializeObject<bool>(await resp.Content.ReadAsStringAsync());
+        }
+
+        public async Task<bool> ListDeleteAsync(string key)
+        {
+            var resp = await _client.GetAsync(_client.BaseAddress + "list/" + HttpUtility.UrlEncode(key) + "/delete");
+            return resp.IsSuccessStatusCode;
         }
     }
 }
